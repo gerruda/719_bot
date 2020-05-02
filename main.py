@@ -11,17 +11,6 @@ import config
 #apihelper.proxy = {'https': 'socks5h://91440724:ginbvXfh@grsst.s5.opennetwork.cc:999'}
 #apihelper.proxy = {	'https': 'mtproto://7nJrbiBodXkgc29zaXRlOilnb29nbGUuY29t:mtprxz.duckdns.org:443'}
 #}  #настройки прокси
-WEBHOOK_HOST = '89.223.120.207'
-WEBHOOK_PORT = 443
-WEBHOOK_LISTEN = '0.0.0.0'
-
-WEBHOOK_SSL_CERT = './webhook_cert.pem'
-WEBHOOK_SSL_PRIV = './webhook_pkey.pem'
-
-WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
-WEBHOOK_URL_PATH = "/%s/" % (config.token)
-
-bot=telebot.TeleBot(config.token)
 
 #bot=telebot.TeleBot('591612755:AAGLQyZkmNUHNcqvcI1qsSE1KFez7J0qsjg')
 

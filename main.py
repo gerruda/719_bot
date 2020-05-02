@@ -12,6 +12,8 @@ import config
 #apihelper.proxy = {	'https': 'mtproto://7nJrbiBodXkgc29zaXRlOilnb29nbGUuY29t:mtprxz.duckdns.org:443'}
 #}  #настройки прокси
 
+
+bot=telebot.TeleBot(config.token)
 #bot=telebot.TeleBot('591612755:AAGLQyZkmNUHNcqvcI1qsSE1KFez7J0qsjg')
 
 feed_list =["https://schzg719.mskobr.ru/data/rss",

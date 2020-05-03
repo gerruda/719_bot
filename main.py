@@ -305,7 +305,7 @@ class WebhookServer(object):
 if __name__ == '__main__':
     cherrypy.config.update({
         'server.socket_host': '127.0.0.1',
-        'server.socket_port': 7774,
+        'server.socket_port': 7772,
         'engine.autoreload.on': False
     })
     cherrypy.quickstart(WebhookServer(), '/', {'/': {}})

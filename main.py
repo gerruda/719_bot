@@ -16,7 +16,8 @@ import schedule
 
 bot=telebot.TeleBot(config.token)
 #bot=telebot.TeleBot('591612755:AAGLQyZkmNUHNcqvcI1qsSE1KFez7J0qsjg')
-
+feed_list =["https://schzg719.mskobr.ru/data/rss", "https://www.youtube.com/feeds/videos.xml?channel_id=UCv9aT7dS9XEN1N7qU0gWNOA",
+            ]
 last_feeds = pickle.load(open("db.p", 'rb'))
 fee_links = []
 users=[]

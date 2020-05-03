@@ -7,6 +7,7 @@ import time
 from time import sleep
 import cherrypy
 import config
+import schedule
 #from telebot import apihelper #метод работы с проксями pip3 install python-telegram-bot[socks] pip3 install -U requests[socks]
 #apihelper.proxy = {'https': 'socks5h://91440724:ginbvXfh@grsst.s5.opennetwork.cc:999'}
 #apihelper.proxy = {	'https': 'mtproto://7nJrbiBodXkgc29zaXRlOilnb29nbGUuY29t:mtprxz.duckdns.org:443'}
@@ -16,13 +17,11 @@ import config
 bot=telebot.TeleBot(config.token)
 #bot=telebot.TeleBot('591612755:AAGLQyZkmNUHNcqvcI1qsSE1KFez7J0qsjg')
 
-feed_list =["https://schzg719.mskobr.ru/data/rss",
-            ]
 last_feeds = pickle.load(open("db.p", 'rb'))
 fee_links = []
 users=[]
-
-
+admin=91440724
+c=()
 #import os
 #token = os.getenv("TOKEN")
 #bot = telebot.TeleBot(token)
@@ -32,38 +31,90 @@ def get_users():
 	m=(f.read())
 	users=m.split(' ') #добавить в список значение и пробел
 	f.close()
-	users.pop() #удалить последний пробел
+	users.pop()#удалить последний пробел
 		
 get_users() #вызов функций для подготовки переменных из файлов
 		
 @bot.message_handler(commands=["start"])
 def start(message):
 	global users
+	global c
 	username=message.from_user.first_name #запоминаем имя пользователя
 	f = open('users', 'a') #открываем доступ к файлу на дозапись значений
 	if str(message.chat.id) not in users: #проверяем чтобы не было повторов
 			f.write(str(message.chat.id)+ ' ') #записать тех кто нажал старт
-			print("Новый пользователь " + str(message.chat.id) + ' ' + message.from_user.first_name)
+			bot.send_message(admin, "Новый пользователь " + str(message.chat.id) + ' ' + message.from_user.first_name)
 	f.close()
 	get_users()
+	if message.chat.id==admin:
+		c=ad_mainmenu
+	else:
+		c=mainmenu
 	bot.send_chat_action(message.chat.id, 'typing')
 	time.sleep(2)
 	bot.send_sticker(message.chat.id, 'CAADAgADa1kAAp7OCwABtPtscVkaOGoWBA')
-	bot.send_message(message.chat.id, "Рады приветсвовать " + username + " в нашем боте помошнике.", reply_markup=mainmenu)
+	bot.send_message(message.chat.id, "Рады приветсвовать " + username + " в нашем боте помошнике. \n Вы автоматически подписаны на обновления новостей нашего сайта и некоторых соц.сетей. ДЛя остановки подписки используйте команду /stop, для повтора подписки используйте команду /start. А еще нашего бота можно добавить в группу, сделать администратором и он будет посылать новости в группу.", reply_markup=c)
 
-	
+@bot.message_handler(commands=["stop"])
+def stop(message):
+	global users
+	global c
+	username=message.from_user.first_name #запоминаем имя пользователя
+	f = open('users', 'r')
+	m=(f.read())
+	m=m.replace(str(message.chat.id) + ' ', '')
+	f.close()
+	f = open('users', 'w') #открываем доступ к файлу на запись
+	f.writelines(m)
+	f.close()
+	bot.send_message(admin, "Пользователь отписался " + str(message.chat.id) + ' ' + message.from_user.first_name)
+	get_users()
+		
 @bot.message_handler(commands=['pereslat']) #реакция на команду pereslat
 def pereslat(message):
-	bot.send_chat_action(message.chat.id, 'typing')
-	time.sleep(2)
 	bot.send_message(message.chat.id, text="Готов принять послание миру")
 	bot.register_next_step_handler(message, get_pereslat) #вызываем функцию
 	
+def get_pereslat(message): #её вызывали
+	global users
+	get_users
+	print(message.media_group_id, users)
+#	bot.forward_message(i, message.chat.id, message.message_id) #форвордим послание
+#	try:
+#		print(message)
+#	try:
+#		print(message.json)
+#	except:
+#		print(message.photo)
+#	if message.media_group_id==None:
+#		for i in users: #перебираем пользователей по массиву
+#			time.sleep(2)
+#			try:
+#				bot.forward_message(i, message.chat.id, message.message_id) #форвордим послание
+#			except:
+#				print('bolt')
+#	else:
+#		print(2)
+#		print(message.media_group_id)
+#		for i in users: #перебираем пользователей по массиву
+#			time.sleep(2)
+#			try:
+#				bot.sendMediaGroup(i, message.photo.file_id)
+#			except:
+#				print('bolt')
+	for i in users: #перебираем пользователей по массиву
+		time.sleep(2)
+		try:
+			bot.forward_message(i, message.chat.id, message.message_id) #форвордим послание
+		except:
+			print('bolt')
+	
 @bot.message_handler(content_types=['text'])
 def main(message):  # главное меню
-#	if message.chat.id == 91440724:
-#		mainmenu.add(admin_btn)
-#       bot.send_message(message.chat.id, text="Рады приветсвовать Вас в нашем боте помошнике.", reply_markup=ad_mainmenu)
+	global c
+	cousers=0
+	cugrup=0
+	global users
 	if message.text == "Привет" or message.text == "🏫Главное меню" or message.text == "/main" or message.text == "/start":
 		start(message)
 	elif message.text == "🗓Расписание":
@@ -74,7 +125,7 @@ def main(message):  # главное меню
 	elif message.text == "🖋Записаться на кружок":
 		bot.send_chat_action(message.chat.id, 'typing')
 		time.sleep(2)
-		bot.send_message(message.chat.id, text="Записаться на кружок \n [Ссылка](https://schzg719.mskobr.ru/edu-news/598)", reply_markup=mainmenu, parse_mode='Markdown')
+		bot.send_message(message.chat.id, text="Записаться на кружок \n [Ссылка](https://www.mos.ru/pgu/ru/application/dogm/077060701/#step_1)", reply_markup=mainmenu, parse_mode='Markdown')
 	elif message.text == "📲Подключить школьный WiFi":
 		bot.send_chat_action(message.chat.id, 'typing')
 		time.sleep(2)
@@ -97,11 +148,11 @@ def main(message):  # главное меню
 	elif message.text == "📖Книги и учебники":
 		bot.send_chat_action(message.chat.id, 'typing')
 		time.sleep(2)
-		bot.send_message(message.chat.id, text="Книги и учебники \n [Ссылка](https://schzg719.mskobr.ru/ads_edu/22)", reply_markup=bibliomenu, parse_mode='Markdown')
+		bot.send_message(message.chat.id, text="Книги и учебники \n [Ссылка](https://schzg719.mskobr.ru/info_add/uchebniki_i_uchebnye_posobiya)", reply_markup=bibliomenu, parse_mode='Markdown')
 	elif message.text == "🧾Журнал 8 А":
 		bot.send_chat_action(message.chat.id, 'typing')
 		time.sleep(2)
-		bot.send_message(message.chat.id, text="Журнал класса", reply_markup=bibliomenu, parse_mode='Markdown')
+		bot.send_message(message.chat.id, text="Журнал класса \n [Ссылка](https://t.me/iv?url=https%3A%2F%2Fschzg719.mskobr.ru%2Fedu-news%2F2401&rhash=b48987ea0be3c5)", reply_markup=bibliomenu, parse_mode='Markdown')
 	elif message.text == "👁‍🗨Школьный сайт":
 		bot.send_chat_action(message.chat.id, 'typing')
 		time.sleep(2)
@@ -123,11 +174,43 @@ def main(message):  # главное меню
 		time.sleep(2)
 		bot.send_message(message.chat.id, "Чем помочь?", reply_markup=mainmenu)
 	elif message.text == "Админка":
-		if message.chat.id == 91440724:
-			mainmenu.add(admin_btn)
-			bot.send_chat_action(message.chat.id, 'typing')
-			time.sleep(2)
-			bot.send_message(message.chat.id, text="Что отправляем?)", reply_markup=mainmenu, parse_mode='Markdown')
+		if message.chat.id==admin:
+			c=ad_pere
+		else:
+			c=mainmenu
+		bot.send_message(message.chat.id, text="С большой силой приходит большая отвественность!", reply_markup=c, parse_mode='Markdown')
+	elif message.text == "🗣Написать всем":
+		if message.chat.id==admin:
+			c=ad_pere
+		else:
+			c=mainmenu
+		bot.send_chat_action(message.chat.id, 'typing')
+		time.sleep(2)
+		pereslat(message)
+		
+	elif message.text == "🗣Публикация из rss":
+		if message.chat.id==admin:
+			c=ad_pere
+		else:
+			c=mainmenu
+		bot.send_chat_action(message.chat.id, 'typing')
+		time.sleep(2)
+		bot.send_message(message.chat.id, text="Начинаем отправку новостей", reply_markup=c, parse_mode='Markdown')
+		feederek()
+	elif message.text == "Статистика":
+		if message.chat.id==admin:
+			c=ad_pere
+		else:
+			c=mainmenu
+		get_users()
+		for user in users:
+			if int(user)<0:
+				cugrup+=1
+		cousers=len(users)-cugrup
+		bot.send_message(message.chat.id, text="В боте подписаны на рассылку " + str(cousers) + " человек и " + str(cugrup) + " групп", reply_markup=c, parse_mode='Markdown')
+		cousers=0
+		cogrup=0
+		
 
 @bot.message_handler(content_types=['voice'])
 def voice_mess(message):  # ненавижу голосовухи
@@ -135,20 +218,12 @@ def voice_mess(message):  # ненавижу голосовухи
 	time.sleep(2)
 	bot.send_sticker(message.chat.id, 'CAADAgADlVkAAp7OCwABfWS6BUi0NtUWBA')
 	bot.send_message(message.chat.id, text='Никто не любит голосовухи.')
-    
-def get_pereslat(message): #её вызывали
-	global users
-	get_users
-	if message.media_group_id==None:
-		m=message.message_id
-	else:
-		m=message.message_id
-	for i in users: #перебираем пользователей по массиву
-		time.sleep(2)
-		bot.forward_message(i, message.chat.id, m) #форвордим послание
+  
+	
 
 # объявление менюшек
 ad_mainmenu = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+ad_pere = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 mainmenu = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 newsmenu = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 bibliomenu = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
@@ -172,9 +247,13 @@ btn_kruz = types.KeyboardButton("🖋Записаться на кружок")
 btn_wifi = types.KeyboardButton("📲Подключить школьный WiFi")
 btn_biblio = types.KeyboardButton("📚Библиотека")
 btn_contacts = types.KeyboardButton("☎️Контакты")
+btn_pereslat = types.KeyboardButton("🗣Написать всем")
+btn_feed = types.KeyboardButton("🗣Публикация из rss")
+btn_stat = types.KeyboardButton("Статистика")
 
 # добавление кнопок в меню
-ad_mainmenu.add(admin_btn, btn_news, btn_rasp, btn_biblio, btn_kruz, btn_wifi, btn_contacts)
+ad_mainmenu.add(btn_news, btn_rasp, btn_biblio, btn_kruz, btn_wifi, btn_contacts, admin_btn)
+ad_pere.add(btn_tomain, btn_pereslat, btn_feed, btn_stat)
 mainmenu.add(btn_news, btn_rasp, btn_biblio, btn_kruz, btn_wifi, btn_contacts)
 newsmenu.add(btn_tomain, btn_news_lnk, btn_news_rss)
 bibliomenu.add(btn_tomain, btn_biblio_books, btn_biblio_jurnal)
@@ -184,32 +263,34 @@ def feederek():
 		for i in feed_list:
 			fee = feedparser.parse(i)
 			fee_title = fee.feed.title
-			for x in range(3):
+			for x in range(2):
 				fee_links.append(fee['entries'][x]['id'])
 				if fee['entries'][x]['id'] in last_feeds:
-					print("Nothing new - " + fee_title)
-				else:
-					sleep(10)
 					entry_title = fee['entries'][x]['title']
 					entry_id = fee['entries'][x]['id']
-					print("Updated - " + fee_title)
-					message = str(entry_title +"\n" + entry_id)
+					entry_link = fee['entries'][x]['link']
+					bot.send_message(admin, "Nothing new - " + entry_title)
+				else:
+					sleep(4)
+					entry_title = fee['entries'][x]['title']
+					entry_id = fee['entries'][x]['id']
+					entry_link = fee['entries'][x]['link']
+					bot.send_message(admin, "Updated - " + entry_title)
+					message = str(entry_title +"\n" + str(entry_link))
 					for i in users:
-						time.sleep(10)
-						bot.send_message(i, text=message)
-		pickle.dump(fee_links, open("db.p", 'wb'))
+						time.sleep(4)
+						try:
+							bot.send_message(i, text=message)
+						except:
+							print('Bolt')
+			pickle.dump(fee_links, open("db.p", 'wb'))
 		return
 
-
-#feederek()
-#bot.polling(none_stop=True)
+schedule.every().day.at('09:00').do(feederek) #запуск функции проверки рсс по времени
+schedule.every().day.at('15:00').do(feederek)
 #while True:
-#	try:
-#		bot.polling(none_stop=True)
-#	except: 
-#		print('BOLT')
-#		logging.error('error: {}'.format(sys.exc_info()[0]))
-#		time.sleep(5)
+#	schedule.run_pending()
+
 class WebhookServer(object):
     # index равнозначно /, т.к. отсутствию части после ip-адреса (грубо говоря)
     @cherrypy.expose

@@ -13,6 +13,15 @@ import schedule
 #apihelper.proxy = {	'https': 'mtproto://7nJrbiBodXkgc29zaXRlOilnb29nbGUuY29t:mtprxz.duckdns.org:443'}
 #}  #настройки прокси
 
+WEBHOOK_HOST = '89.223.120.207'
+WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
+WEBHOOK_LISTEN = '0.0.0.0'  # На некоторых серверах придется указывать такой же IP, что и выше
+
+WEBHOOK_SSL_CERT = './webhook_cert.pem'  # Путь к сертификату
+WEBHOOK_SSL_PRIV = './webhook_pkey.pem'  # Путь к приватному ключу
+
+WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
+WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot=telebot.TeleBot(config.token)
 #bot=telebot.TeleBot('591612755:AAGLQyZkmNUHNcqvcI1qsSE1KFez7J0qsjg')
@@ -292,20 +301,53 @@ schedule.every().day.at('15:00').do(feederek)
 #while True:
 #	schedule.run_pending()
 
+# Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
+bot.remove_webhook()
+
+ # Ставим заново вебхук
+bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
+                certificate=open(WEBHOOK_SSL_CERT, 'r'))
+# Наш вебхук-сервер
 class WebhookServer(object):
-    # index равнозначно /, т.к. отсутствию части после ip-адреса (грубо говоря)
     @cherrypy.expose
     def index(self):
-        length = int(cherrypy.request.headers['content-length'])
-        json_string = cherrypy.request.body.read(length).decode("utf-8")
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return ''
+        if 'content-length' in cherrypy.request.headers and \
+                        'content-type' in cherrypy.request.headers and \
+                        cherrypy.request.headers['content-type'] == 'application/json':
+            length = int(cherrypy.request.headers['content-length'])
+            json_string = cherrypy.request.body.read(length).decode("utf-8")
+            update = telebot.types.Update.de_json(json_string)
+            # Эта функция обеспечивает проверку входящего сообщения
+            bot.process_new_updates([update])
+            return ''
+        else:
+            raise cherrypy.HTTPError(403)
 
-if __name__ == '__main__':
-    cherrypy.config.update({
-        'server.socket_host': '127.0.0.1',
-        'server.socket_port': 7774,
-        'engine.autoreload.on': False
-    })
-    cherrypy.quickstart(WebhookServer(), '/', {'/': {}})
+#class WebhookServer(object):
+    # index равнозначно /, т.к. отсутствию части после ip-адреса (грубо говоря)
+#    @cherrypy.expose
+ #   def index(self):
+#        length = int(cherrypy.request.headers['content-length'])
+#        json_string = cherrypy.request.body.read(length).decode("utf-8")
+#        update = telebot.types.Update.de_json(json_string)
+#        bot.process_new_updates([update])
+#        return ''
+
+#if __name__ == '__main__':
+#    cherrypy.config.update({
+#        'server.socket_host': '127.0.0.1',
+#        'server.socket_port': 7772,
+#        'engine.autoreload.on': False
+#    })
+#    cherrypy.quickstart(WebhookServer(), '/', {'/': {}})
+# Указываем настройки сервера CherryPy
+cherrypy.config.update({
+    'server.socket_host': WEBHOOK_LISTEN,
+    'server.socket_port': WEBHOOK_PORT,
+    'server.ssl_module': 'builtin',
+    'server.ssl_certificate': WEBHOOK_SSL_CERT,
+    'server.ssl_private_key': WEBHOOK_SSL_PRIV
+})
+
+ # Собственно, запуск!
+cherrypy.quickstart(WebhookServer(), WEBHOOK_URL_PATH, {'/': {}})

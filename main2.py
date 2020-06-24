@@ -104,7 +104,7 @@ async def pereslat(message: types.Message):
 @dp.message_handler(state=ZadStatus.pereslat, content_types=types.ContentTypes.ANY)
 async def pereslat2(message: types.Message, state: FSMContext):
 	global users
-  if message.chat.id==admin:
+  	if message.chat.id==admin:
 		c=ad_mainmenu
 	else:
 		c=mainmenu

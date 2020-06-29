@@ -19,9 +19,7 @@ WEBHOOK_SSL_PRIV = '/etc/letsencrypt/live/www.uchenikoff.ru/privkey.pem'
 WEBHOOK_URL_BASE = "https://www.uchenikoff.ru/ZZZZ/"
 WEBHOOK_URL_PATH = "/"
 
-#bot=telebot.TeleBot(config.token)
-bot = telebot.AsyncTeleBot(config.token)
-task = bot.get_me()
+bot=telebot.TeleBot(config.token)
 
 feed_list =["https://schzg719.mskobr.ru/data/rss", "https://www.youtube.com/feeds/videos.xml?channel_id=UCv9aT7dS9XEN1N7qU0gWNOA",
             ]
@@ -293,9 +291,11 @@ def feederek():
 		return
 
 schedule.every().day.at('09:00').do(feederek) #запуск функции проверки рсс по времени
-schedule.every().day.at('17:55').do(feederek)
-#while True:
-#	schedule.run_pending()
+schedule.every().day.at('17:05').do(feederek)
+
+while True:
+        schedule.run_pending()while True:
+	schedule.run_pending()
 
 # Наш вебхук-сервер
 class WebhookServer(object):
@@ -341,6 +341,3 @@ cherrypy.config.update({
     'server.ssl_certificate': WEBHOOK_SSL_CERT,
     'server.ssl_private_key': WEBHOOK_SSL_PRIV
 })
-
-while True:
-        schedule.run_pending()

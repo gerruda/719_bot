@@ -37,12 +37,11 @@ bot = Bot(config.token)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-feed_list =["https://schzg719.mskobr.ru/data/rss", "https://www.youtube.com/feeds/videos.xml?channel_id=UCv9aT7dS9XEN1N7qU0gWNOA"
+feed_list =["https://schzg719.mskobr.ru/data/rss", "https://www.youtube.com/feeds/videos.xml?channel_id=UCv9aT7dS9XEN1N7qU0gWNOA",
             ]
 last_feeds = pickle.load(open("db.p", 'rb'))
 fee_links = []
 users=[]
-#old=[910986423, 91440724, -138199754, -1001151746840, -1001243467239, 530476066, 1036301915, 388802767, 359619030, 525423455, 826877425]
 admin=91440724
 c=()
 
@@ -53,10 +52,11 @@ class ZadStatus(StatesGroup):
 
 def get_users():
 	global users
-	f = open('users', 'rb')
-	users = pickle.load(f)
+	f = open('users', 'r')
+	m=(f.read())
+	users=m.split(' ')
 	f.close()
-	print(users)
+	users.pop()
 		
 get_users()
 		
@@ -66,12 +66,10 @@ async def start(message):
 	global c
 	global admin
 	username=message.from_user.first_name #запоминаем имя пользователя
-	f = open('users', 'wb') #открываем доступ к файлу на дозапись значений
+	f = open('users', 'a') #открываем доступ к файлу на дозапись значений
 	if str(message.chat.id) not in users: #проверяем чтобы не было повторов
-			users.append(str(message.chat.id))
-#			users.extend(old)
-			await bot.send_message(admin, 'Новый пользователь ' + str(username) + ' ' + message.from_user.username + ' ' + message.chat.id)
-	pickle.dump(users, f)
+			f.write(str(message.chat.id)+ ' ') #записать тех кто нажал старт
+			await bot.send_message(admin, "Новый пользователь " + str(message.chat.id) + ' ' + message.from_user.first_name)
 	f.close()
 	get_users()
 	if message.chat.id==admin:
@@ -81,25 +79,22 @@ async def start(message):
 	await bot.send_chat_action(message.chat.id, 'typing')
 	await asyncio.sleep(1)
 	await bot.send_sticker(message.chat.id, 'CAADAgADa1kAAp7OCwABtPtscVkaOGoWBA')
-	await bot.send_message(message.chat.id, "Рады приветсвовать " + username + " в нашем боте помошнике. \n Вы автоматически подписаны на обновления новостей нашего сайта и некоторых соц.сетей. Для остановки подписки используйте команду /stop, для повтора подписки используйте команду /start. А еще нашего бота можно добавить в группу, сделать администратором и он будет посылать новости в группу.", reply_markup=c)
+	await bot.send_message(message.chat.id, "Рады приветсвовать " + username + " в нашем боте помошнике. \n Вы автоматически подписаны на обновления новостей нашего сайта и некоторых соц.сетей. ДЛя остановки подписки используйте команду /stop, для повтора подписки используйте команду /start. А еще нашего бота можно добавить в группу, сделать администратором и он будет посылать новости в группу.", reply_markup=c)
 
-@dp.message_handler(commands=["stop"])
-async def stop(message):
-	global users
-	global c
-	username=message.from_user.first_name #запоминаем имя пользователя
-	f = open('users', 'wb')
-	g = str(message.chat.id)
-	try:
-		users.remove(g)
-		await bot.send_message(admin, "Пользователь отписался " + str(message.chat.id) + ' ' + message.from_user.first_name + ' ' + message.from_user.username)
-		await bot.send_message(message.chat.id, text='Подписка на новости приостоновлена. Администраторы бота все еще могут отправлять вам сообщения (они это делают крайне редко). Для возобновления подписки используйте команду /start Удачного Вам дня.')
-		pickle.dump(users, f)
-	except:
-		await message.reply('Вы не подписаны на новости. Администраторы могут присылать вам сообщения. Для повторной подписки нажмите /start')
-		pickle.dump(users, f)
-	f.close()
-	get_users()
+#@bot.message_handler(commands=["stop"])
+#def stop(message):
+#	global users
+#	global c
+#	username=message.from_user.first_name #запоминаем имя пользователя
+#	f = open('users', 'r')
+#	m=(f.read())
+#	m=m.replace(str(message.chat.id) + ' ', '')
+#	f.close()
+#	f = open('users', 'w') #открываем доступ к файлу на запись
+#	f.writelines(m)
+#	f.close()
+#	bot.send_message(admin, "Пользователь отписался " + str(message.chat.id) + ' ' + message.from_user.first_name)
+#	get_users()
 		
 @dp.message_handler(commands=['pereslat'], state="*") #реакция на команду pereslat
 async def pereslat(message: types.Message):
@@ -112,6 +107,10 @@ async def pereslat(message: types.Message):
 async def pereslat2(message: types.Message, state: FSMContext):
         global users
         global c
+#       if message.chat.id==admin:
+#               c=ad_mainmenu
+#       else:
+#               c=mainmenu
         if message.text=="❌ОТМЕНА":
             await message.answer("ОХРАНА! ОТМЕНА!", reply_markup=c)
             await state.finish()
@@ -119,11 +118,8 @@ async def pereslat2(message: types.Message, state: FSMContext):
             get_users()
             for i in users: #перебираем пользователей по массиву
                 try:
-                    if message.media_group_id != 'None':
-                        await bot.forward_message(i, admin, message.message_id)
-                        await asyncio.sleep(1)
-                    else:
-                        await bot.forward_media_group(i, admin, message.media_group_id)
+                    await bot.forward_message(i, admin, message.message_id)
+                    await asyncio.sleep(1)
                 except:
                     await bot.send_message(admin, i + " пользователь недоступен")
             await message.reply("Послание отправлено.", reply_markup=c)
@@ -141,7 +137,7 @@ async def main(message: types.Message):  # главное меню
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
 		await bot.send_sticker(message.chat.id, 'CAADAgADglkAAp7OCwABF1LyypVAYq0WBA')
-		await bot.send_message(message.chat.id, text="Расписание \n [Ссылка](https://t.me/iv?url=https://schzg719.mskobr.ru/info_add/raspisanie-urokov)", reply_markup=mainmenu, parse_mode='Markdown')
+		await bot.send_message(message.chat.id, text="Расписание \n [Ссылка](https://t.me/iv?url=https%3A%2F%2Fschzg719.mskobr.ru%2Finfo_add%2Fraspisanie-urokov&rhash=b48987ea0be3c5)", reply_markup=mainmenu, parse_mode='Markdown')
 	elif message.text == "🖋Записаться на кружок":
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
@@ -150,8 +146,7 @@ async def main(message: types.Message):  # главное меню
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
 		await bot.send_sticker(message.chat.id, 'CAADAgADc1kAAp7OCwABUikOpbNvciIWBA')
-		await bot.send_message(message.chat.id, text="Подключить школьный WiFi \n 	Шаг первый на Портале госулуг надо иметь свою учетную запись, а не родителей. \n Шаг второй, передать данные классному руководителю. Что бы у тебя был доступ в Дневник. \n	Шаг третий в Дневнике справа вверху шестеренка. Входим в личный кабинет и уже там будет логин и пароль для приложения МЭШ и школьного WiFi \n Шаг последний, настроить телефон или планшет на подключение к школьной вафле, это уже по ссылке ниже \n	[Ссылка](https://t.me/iv?url=https%3A%2F%2Fuchebnik.mos.ru%2Fhelp%2Fstats%2Fwifi%2Fopenwifi&rhash=f33defb321a418)", parse_mode='Markdown')
-		await bot.send_message(message.chat.id, text='А еще к сети STUDY.MOS можно подлключится в любой школе если у вас есть учетка на mos.ru инструкция [Ссылка](https://uchebnik.mos.ru/help/stats/wifi/studymos)', reply_markup=mainmenu, parse_mode='Markdown')
+		await bot.send_message(message.chat.id, text="Подключить школьный WiFi \n 	Шаг первый на Портале госулуг надо иметь свою учетную запись, а не родителей. \n Шаг второй, передать данные классному руководителю. Что бы у тебя был доступ в Дневник. \n	Шаг третий в Дневнике справа вверху шестеренка. Входим в личный кабинет и уже там будет логин и пароль для приложения МЭШ и школьного WiFi\n Шаг последний, настроить телефон или планшет на подключение к школьной вафле, это уже по ссылке ниже \n	[Ссылка](https://t.me/iv?url=https%3A%2F%2Fuchebnik.mos.ru%2Fhelp%2Fstats%2Fwifi%2Fopenwifi&rhash=f33defb321a418)", reply_markup=mainmenu, parse_mode='Markdown')
 	elif message.text == "📚Библиотека":
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
@@ -282,7 +277,7 @@ async def feederek():
 		for i in feed_list:
 			fee = feedparser.parse(i)
 			fee_title = fee.feed.title
-			for x in range(5):
+			for x in range(2):
 				fee_links.append(fee['entries'][x]['id'])
 				if fee['entries'][x]['id'] in last_feeds:
 					entry_title = fee['entries'][x]['title']
@@ -301,11 +296,16 @@ async def feederek():
 						try:
 							await bot.send_message(i, text=message)
 						except:
-							await bot.send_message(admin, i + " пользователь не доступен")
+							await message.reply(admin, i + " пользователь не доступен")
 			pickle.dump(fee_links, open("db.p", 'wb'))
 		return
 
-async def on_startup(dp):
+#schedule.every().day.at('09:00').do(feederek) #запуск функции проверки рсс по времени
+#schedule.every().day.at('14:30').do(feederek)
+#while True:
+#	schedule.run_pending()
+
+ def on_startup(dp):
     await bot.set_webhook(WEBHOOK_URL)
 
 async def on_shutdown(dp):
@@ -316,8 +316,7 @@ async def on_shutdown(dp):
     logging.warning('Bye!')
 
 if __name__ == '__main__':
-    aiocron.crontab('0 9 * * *', func=feederek)
-    aiocron.crontab('0 17 * * *', func=feederek)
+    aiocron.crontab('0 * * * *').next()
     start_webhook(
         dispatcher=dp,
         webhook_path=WEBHOOK_PATH,

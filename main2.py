@@ -46,6 +46,7 @@ admin=91440724
 c=()
 
 class ZadStatus(StatesGroup):
+	say = State()
 	vzad = State()
 	zad = State()
 	pereslat = State()
@@ -127,7 +128,26 @@ async def pereslat2(message: types.Message, state: FSMContext):
                     await bot.send_message(admin, str(i) + " пользователь недоступен")
             await message.reply("Послание отправлено.", reply_markup=c)
             await state.finish()
-
+@dp.message_handler(commands="say", state="*") #реакция на команду vzad
+async def vzadanie(message: types.Message):
+	await bot.send_message(message.chat.id, text="Готов принимать сообщение для администрации школы. Если нужно перслать несколько файлов,  используй эту функцию несколько раз.", reply_markup=keyboard3)
+	await ZadStatus.vzad.set()
+	
+@dp.message_handler(state=ZadStatus.say, content_types=types.ContentTypes.ANY)
+async def vzadanie2(message: types.Message, state: FSMContext):
+	global admin
+	if message.chat.id==admin:
+		c=keyboard2
+	else:
+		c=keyboard1
+	if message.text=="❌ОТМЕНА":
+		await message.answer("ОХРАНА! ОТМЕНА!", reply_markup=c)
+		await state.finish()
+	else:
+		await bot.forward_message(admin, message.chat.id, message.message_id)
+		await message.reply("Послание принято", reply_markup=c)
+		await state.finish()
+		
 @dp.message_handler(content_types=['text'], state="*")
 async def main(message: types.Message):  # главное меню
 	global c
@@ -169,10 +189,10 @@ async def main(message: types.Message):  # главное меню
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
 		await bot.send_message(message.chat.id, text="Книги и учебники \n [Ссылка](https://schzg719.mskobr.ru/info_add/uchebniki_i_uchebnye_posobiya)", reply_markup=bibliomenu, parse_mode='Markdown')
-	elif message.text == "🧾Журнал 8 А":
-		await bot.send_chat_action(message.chat.id, 'typing')
-		await asyncio.sleep(1)
-		await bot.send_message(message.chat.id, text="Журнал класса \n [Ссылка](https://t.me/iv?url=https%3A%2F%2Fschzg719.mskobr.ru%2Fedu-news%2F2401&rhash=b48987ea0be3c5)", reply_markup=bibliomenu, parse_mode='Markdown')
+#	elif message.text == "🧾Журнал 8 А":
+#		await bot.send_chat_action(message.chat.id, 'typing')
+#		await asyncio.sleep(1)
+#		await bot.send_message(message.chat.id, text="Журнал класса \n [Ссылка](https://t.me/iv?url=https%3A%2F%2Fschzg719.mskobr.ru%2Fedu-news%2F2401&rhash=b48987ea0be3c5)", reply_markup=bibliomenu, parse_mode='Markdown')
 	elif message.text == "👁‍🗨Школьный сайт":
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
@@ -188,7 +208,7 @@ async def main(message: types.Message):  # главное меню
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
 		await bot.send_sticker(message.chat.id, 'CAADAgADcVkAAp7OCwABOa0ndWVQ9koWBA')
-		await bot.send_message(message.chat.id, text="Написать пиьсмо в администрацию? \n 719@edu.mos.ru", reply_markup=contaktsmenu, parse_mode='Markdown')
+		await bot.send_message(message.chat.id, text="Написать пиьсмо в администрацию? \n 719@edu.mos.ru \n или воспользуйтесь коммандой /say", reply_markup=contaktsmenu, parse_mode='Markdown')
 	elif message.text == "🏫Главное меню":
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
@@ -272,7 +292,7 @@ ad_mainmenu.add(btn_news, btn_rasp, btn_biblio, btn_kruz, btn_wifi, btn_contacts
 ad_pere.add(btn_tomain, btn_pereslat, btn_feed, btn_stat)
 mainmenu.add(btn_news, btn_rasp, btn_biblio, btn_kruz, btn_wifi, btn_contacts)
 newsmenu.add(btn_tomain, btn_news_lnk, btn_news_rss)
-bibliomenu.add(btn_tomain, btn_biblio_books, btn_biblio_jurnal)
+bibliomenu.add(btn_tomain, btn_biblio_books)
 contaktsmenu.add(btn_tomain, btn_cont_link, btn_cont_soc, btn_cont_email)
 keyboard3 = ReplyKeyboardMarkup(True, True)
 keyboard3.row("❌ОТМЕНА")

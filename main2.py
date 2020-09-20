@@ -128,6 +128,7 @@ async def pereslat2(message: types.Message, state: FSMContext):
                     await bot.send_message(admin, str(i) + " пользователь недоступен")
             await message.reply("Послание отправлено.", reply_markup=c)
             await state.finish()
+<<<<<<< HEAD
 
 @dp.message_handler(commands="say", state="*") #реакция на команду say
 async def say(message: types.Message):
@@ -144,6 +145,26 @@ async def say2(message: types.Message, state: FSMContext):
 	else:
 		await bot.forward_message(admin, message.chat.id, message.message_id)
 		await message.reply("Послание принято", reply_markup=mainmenu)
+=======
+@dp.message_handler(commands="say", state="*") #реакция на команду vzad
+async def vzadanie(message: types.Message):
+	await bot.send_message(message.chat.id, text="Готов принимать сообщение для администрации школы. Если нужно перслать несколько файлов,  используй эту функцию несколько раз.", reply_markup=keyboard3)
+	await ZadStatus.vzad.set()
+	
+@dp.message_handler(state=ZadStatus.say, content_types=types.ContentTypes.ANY)
+async def vzadanie2(message: types.Message, state: FSMContext):
+	global admin
+	if message.chat.id==admin:
+		c=keyboard2
+	else:
+		c=keyboard1
+	if message.text=="❌ОТМЕНА":
+		await message.answer("ОХРАНА! ОТМЕНА!", reply_markup=c)
+		await state.finish()
+	else:
+		await bot.forward_message(admin, message.chat.id, message.message_id)
+		await message.reply("Послание принято", reply_markup=c)
+>>>>>>> 4b8c8f508614bf5a547e66f5700f9f558057804e
 		await state.finish()
 		
 @dp.message_handler(content_types=['text'], state="*")

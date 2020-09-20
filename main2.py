@@ -39,10 +39,9 @@ dp = Dispatcher(bot, storage=storage)
 
 feed_list =["https://schzg719.mskobr.ru/data/rss", "https://www.youtube.com/feeds/videos.xml?channel_id=UCv9aT7dS9XEN1N7qU0gWNOA"
             ]
-last_feeds = pickle.load(open("db.p", 'rb'))
-fee_links = []
+
 users=[]
-#old=[910986423, 91440724, -138199754, -1001151746840, -1001243467239, 530476066, 1036301915, 388802767, 359619030, 525423455, 826877425]
+old=[910986423, -138199754, -1001151746840, -1001243467239, 530476066, 1036301915, 388802767, 359619030, 525423455, 826877425]
 admin=91440724
 c=()
 
@@ -67,10 +66,10 @@ async def start(message):
 	global admin
 	username=message.from_user.first_name #запоминаем имя пользователя
 	f = open('users', 'wb') #открываем доступ к файлу на дозапись значений
-	if str(message.chat.id) not in users: #проверяем чтобы не было повторов
-			users.append(str(message.chat.id))
+	if message.chat.id not in users: #проверяем чтобы не было повторов
+			users.append(message.chat.id)
 #			users.extend(old)
-			await bot.send_message(admin, 'Новый пользователь ' + str(username) + ' ' + message.from_user.username + ' ' + message.chat.id)
+			await bot.send_message(admin, 'Новый пользователь ' + str(username) + ' ' + message.from_user.username + ' ' + str(message.chat.id))
 	pickle.dump(users, f)
 	f.close()
 	get_users()
@@ -125,7 +124,7 @@ async def pereslat2(message: types.Message, state: FSMContext):
                     else:
                         await bot.forward_media_group(i, admin, message.media_group_id)
                 except:
-                    await bot.send_message(admin, i + " пользователь недоступен")
+                    await bot.send_message(admin, str(i) + " пользователь недоступен")
             await message.reply("Послание отправлено.", reply_markup=c)
             await state.finish()
 
@@ -141,7 +140,7 @@ async def main(message: types.Message):  # главное меню
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
 		await bot.send_sticker(message.chat.id, 'CAADAgADglkAAp7OCwABF1LyypVAYq0WBA')
-		await bot.send_message(message.chat.id, text="Расписание \n [Ссылка](https://t.me/iv?url=https://schzg719.mskobr.ru/info_add/raspisanie-urokov)", reply_markup=mainmenu, parse_mode='Markdown')
+		await bot.send_message(message.chat.id, text="Расписание \n [Ссылка](https://schzg719.mskobr.ru/info_add/raspisanie-urokov)", reply_markup=mainmenu, parse_mode='Markdown')
 	elif message.text == "🖋Записаться на кружок":
 		await bot.send_chat_action(message.chat.id, 'typing')
 		await asyncio.sleep(1)
@@ -279,6 +278,9 @@ keyboard3 = ReplyKeyboardMarkup(True, True)
 keyboard3.row("❌ОТМЕНА")
 
 async def feederek():
+
+		last_feeds = pickle.load(open("db.p", 'rb'))
+		fee_links = []
 		for i in feed_list:
 			fee = feedparser.parse(i)
 			fee_title = fee.feed.title
@@ -301,8 +303,8 @@ async def feederek():
 						try:
 							await bot.send_message(i, text=message)
 						except:
-							await bot.send_message(admin, i + " пользователь не доступен")
-			pickle.dump(fee_links, open("db.p", 'wb'))
+							await bot.send_message(admin, str(i) + " пользователь не доступен")
+				pickle.dump(fee_links, open("db.p", 'wb'))
 		return
 
 async def on_startup(dp):
